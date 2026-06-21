@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nonogram Pictures</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: #cac3b5;
+      color: #363431;
+      font-family: system-ui, sans-serif;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    canvas {
+      image-rendering: pixelated;
+      max-width: 100vw;
+      max-height: 100vh;
+      outline: none;
+    }
+
+    #status {
+      position: fixed;
+      left: 16px;
+      bottom: 14px;
+      font-size: 13px;
+      opacity: 0.75;
+    }
+  </style>
+</head>
+<body>
+  <div id="status">Loading...</div>
+  <script src="howler.min.js"></script>
+  <script src="wasm_exec.js"></script>
+  <script>
+    const music = new Howl({
+      src: ["audio/tunetank-lounge-jazz-elevator-music-348999.mp3"],
+      loop: true,
+      volume: 0.35,
+      html5: true
+    });
+
+    const startMusic = () => {
+      if (!music.playing()) {
+        music.play();
+      }
+      window.removeEventListener("pointerdown", startMusic);
+      window.removeEventListener("keydown", startMusic);
+    };
+    window.addEventListener("pointerdown", startMusic, { once: true });
+    window.addEventListener("keydown", startMusic, { once: true });
+
+    const go = new Go();
+    WebAssembly.instantiateStreaming(fetch("game.wasm"), go.importObject).then((result) => {
+      document.getElementById("status").remove();
+      go.run(result.instance);
+    }).catch((err) => {
+      document.getElementById("status").textContent = err;
+      console.error(err);
+    });
+  </script>
+</body>
+</html>

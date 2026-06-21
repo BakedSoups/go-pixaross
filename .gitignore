@@ -1,0 +1,6 @@
+game
+*.wasm
+*.exe
+*.test
+dist/
+build/
