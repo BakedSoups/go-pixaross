@@ -1,0 +1,5 @@
+18:26:21 dev starting
+18:26:21 building wasm
+18:26:21 dashboard listening on http://localhost:8081
+18:26:21 web server listening on http://localhost:8080
+18:26:22 wasm build completed in 742.947596ms

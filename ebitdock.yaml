@@ -1,0 +1,31 @@
+project: nongrampictures
+
+game:
+  package: ./cmd/game
+  output: ./static/game.wasm
+
+wasm:
+  exec: ./static/wasm_exec.js
+
+services:
+  web:
+    root: ./static
+    port: 8080
+
+  api:
+    enabled: false
+    command: go run ./server
+    port: 3001
+
+dashboard:
+  port: 8081
+
+watch:
+  rebuild:
+    - ./cmd/**/*.go
+    - ./internal/**/*.go
+    - ./assets/**
+    - ./levels/**
+    - ./soundeffects/**
+  static:
+    - ./static/**

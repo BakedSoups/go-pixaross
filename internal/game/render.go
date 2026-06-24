@@ -281,7 +281,7 @@ func (g *Game) drawStatusPanel(screen *ebiten.Image) {
 func (g *Game) drawToolTrigger(screen *ebiten.Image) {
 	drawTrigger(screen, g.layout.fillTrigger, g.tool == nonogram.ToolFill, colBlue, g.icons.Pencil)
 	drawTrigger(screen, g.layout.markTrigger, g.tool == nonogram.ToolMark, colAccent, g.icons.Eraser)
-	drawButton(screen, g.layout.godModeButton, "GOD")
+	// drawButton(screen, g.layout.godModeButton, "GOD")
 }
 
 func drawTrigger(screen *ebiten.Image, r rect, active bool, c color.RGBA, icon *ebiten.Image) {
