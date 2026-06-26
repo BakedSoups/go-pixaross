@@ -198,7 +198,7 @@ func (g *Game) updateLevelSelectInput() {
 	for slot := 0; slot < levelSelectPageSize; slot++ {
 		if levelTileRect(slot).Contains(x, y) {
 			levelIndex := pageStart + slot
-			if levelIndex < len(gameLevels) {
+			if levelIndex < len(gameLevels) && gameLevels[levelIndex].Available {
 				_ = g.loadLevel(levelIndex)
 			} else {
 				g.showMenuNotice("LW")

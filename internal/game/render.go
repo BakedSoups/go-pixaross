@@ -2,6 +2,7 @@ package game
 
 import (
 	"fmt"
+	"image"
 	"image/color"
 	"math"
 	"strings"
@@ -281,7 +282,7 @@ func (g *Game) drawStatusPanel(screen *ebiten.Image) {
 func (g *Game) drawToolTrigger(screen *ebiten.Image) {
 	drawTrigger(screen, g.layout.fillTrigger, g.tool == nonogram.ToolFill, colBlue, g.icons.Pencil)
 	drawTrigger(screen, g.layout.markTrigger, g.tool == nonogram.ToolMark, colAccent, g.icons.Eraser)
-	// drawButton(screen, g.layout.godModeButton, "GOD")
+	drawButton(screen, g.layout.godModeButton, "GOD")
 }
 
 func drawTrigger(screen *ebiten.Image, r rect, active bool, c color.RGBA, icon *ebiten.Image) {
@@ -422,7 +423,7 @@ func drawLevelTile(screen *ebiten.Image, r rect, index int) {
 		vector.StrokeLine(screen, x, float32(board.y), x, float32(board.y+board.h), 1, colGrid, false)
 		vector.StrokeLine(screen, float32(board.x), y, float32(board.x+board.w), y, 1, colGrid, false)
 	}
-	if index < len(gameLevels) {
+	if index < len(gameLevels) && gameLevels[index].Available {
 		drawCenteredText(screen, gameLevels[index].Label, rect{x: r.x, y: r.y + r.h - 21, w: r.w, h: 16}, colInk)
 		return
 	}
@@ -435,6 +436,9 @@ func (g *Game) drawLevelTile(screen *ebiten.Image, r rect, index int) {
 		return
 	}
 	level := gameLevels[index]
+	if !level.Available {
+		return
+	}
 	if best := g.bestTimes[level.ID]; best > 0 {
 		board := rect{x: r.x + 18, y: r.y + 25, w: r.w - 36, h: r.h - 46}
 		if thumb := g.levelThumbs[level.ID]; len(thumb) > 0 {
@@ -539,7 +543,7 @@ func (g *Game) drawLevelSelect(screen *ebiten.Image) {
 	if time.Now().Before(g.menuNoticeUntil) {
 		drawCenteredText(screen, g.menuNotice, rect{x: 0, y: 648, w: ScreenWidth, h: 34}, colAccent)
 	}
-	drawCenteredText(screen, fmt.Sprintf("%d/%d", g.levelPage+1, levelSelectPages), rect{x: 0, y: 650, w: ScreenWidth, h: 26}, colMuted)
+	drawCenteredText(screen, fmt.Sprintf("%d/%d", g.levelPage+1, levelSelectPages()), rect{x: 0, y: 650, w: ScreenWidth, h: 26}, colMuted)
 	drawButton(screen, g.layout.levelPrevButton, "prev")
 	drawButton(screen, g.layout.levelNextButton, "next")
 	drawButton(screen, g.layout.levelBackButton, "back")
@@ -656,24 +660,8 @@ func drawPixelMatrix(dst *ebiten.Image, matrix [][]assets.PixelCell, r rect, alp
 	totalH := cellSize * float64(rows)
 	startX := math.Floor(r.x + (r.w-totalW)/2)
 	startY := math.Floor(r.y + (r.h-totalH)/2)
-
-	for y, row := range matrix {
-		for x, cell := range row {
-			if !cell.Visible {
-				continue
-			}
-			c := alphaColor(cell.Color, alpha)
-			vector.DrawFilledRect(
-				dst,
-				float32(startX+float64(x)*cellSize),
-				float32(startY+float64(y)*cellSize),
-				float32(cellSize),
-				float32(cellSize),
-				c,
-				false,
-			)
-		}
-	}
+	img := imageFromMatrix(matrix, alpha, color.RGBA{}, 0)
+	drawPixelImage(dst, img, startX, startY, cellSize)
 }
 
 func drawPixelMatrixTinted(dst *ebiten.Image, matrix [][]assets.PixelCell, r rect, alpha float64, tint color.RGBA, tintAmount float64) {
@@ -691,25 +679,33 @@ func drawPixelMatrixTinted(dst *ebiten.Image, matrix [][]assets.PixelCell, r rec
 	totalH := cellSize * float64(rows)
 	startX := math.Floor(r.x + (r.w-totalW)/2)
 	startY := math.Floor(r.y + (r.h-totalH)/2)
+	img := imageFromMatrix(matrix, alpha, tint, tintAmount)
+	drawPixelImage(dst, img, startX, startY, cellSize)
+}
 
+func imageFromMatrix(matrix [][]assets.PixelCell, alpha float64, tint color.RGBA, tintAmount float64) *ebiten.Image {
+	img := image.NewRGBA(image.Rect(0, 0, len(matrix[0]), len(matrix)))
 	for y, row := range matrix {
 		for x, cell := range row {
 			if !cell.Visible {
 				continue
 			}
-			c := mixColor(cell.Color, tint, tintAmount)
-			c = alphaColor(c, alpha)
-			vector.DrawFilledRect(
-				dst,
-				float32(startX+float64(x)*cellSize),
-				float32(startY+float64(y)*cellSize),
-				float32(cellSize),
-				float32(cellSize),
-				c,
-				false,
-			)
+			c := cell.Color
+			if tintAmount > 0 {
+				c = mixColor(c, tint, tintAmount)
+			}
+			img.SetRGBA(x, y, alphaColor(c, alpha))
 		}
 	}
+	return ebiten.NewImageFromImage(img)
+}
+
+func drawPixelImage(dst, img *ebiten.Image, x, y, scale float64) {
+	op := &ebiten.DrawImageOptions{}
+	op.Filter = ebiten.FilterNearest
+	op.GeoM.Scale(scale, scale)
+	op.GeoM.Translate(x, y)
+	dst.DrawImage(img, op)
 }
 
 func mixColor(a, b color.RGBA, t float64) color.RGBA {

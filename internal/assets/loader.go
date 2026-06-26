@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/alex/nongrampictures/internal/nonogram"
@@ -89,6 +90,60 @@ func LoadPuzzleAssets(puzzlePath string) (*PuzzleAssets, error) {
 		SkeletonPixels: pixelMatrix(skeleton.Source, puzzle.Width, puzzle.Height),
 		RevealPixels:   pixelMatrix(reveal.Source, puzzle.Width, puzzle.Height),
 	}, nil
+}
+
+func ListPuzzlePaths() []string {
+	paths := map[string]string{}
+	addPuzzleDirs(paths, "assets/puzzles")
+	addEmbeddedPuzzleDirs(paths)
+
+	ids := make([]string, 0, len(paths))
+	for id := range paths {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+
+	result := make([]string, 0, len(ids))
+	for _, id := range ids {
+		result = append(result, paths[id])
+	}
+	return result
+}
+
+func addPuzzleDirs(paths map[string]string, root string) {
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		return
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		puzzlePath := filepath.ToSlash(filepath.Join(root, entry.Name(), "puzzle.json"))
+		if _, err := os.Stat(puzzlePath); err == nil {
+			paths[entry.Name()] = puzzlePath
+		}
+	}
+}
+
+func addEmbeddedPuzzleDirs(paths map[string]string) {
+	const root = "embedded/assets/puzzles"
+	entries, err := embeddedFiles.ReadDir(root)
+	if err != nil {
+		return
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		puzzlePath := "assets/puzzles/" + entry.Name() + "/puzzle.json"
+		embeddedPuzzlePath := root + "/" + entry.Name() + "/puzzle.json"
+		if _, err := fs.Stat(embeddedFiles, embeddedPuzzlePath); err == nil {
+			if _, exists := paths[entry.Name()]; !exists {
+				paths[entry.Name()] = puzzlePath
+			}
+		}
+	}
 }
 
 func LoadUIIcons() (*UIIcons, error) {

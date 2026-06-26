@@ -18,13 +18,15 @@ Controls:
 
 ## Add A Puzzle
 
-Create one spritesheet in `levels/` named like:
+Create one PNG or WebP spritesheet in `levels/` named like:
 
 ```text
 L3-Flower_16.png
 ```
 
-The suffix is the tile size. A `_16` file should be 32x16: the left 16x16 tile is the before/line art and puzzle solution, and the right 16x16 tile is the colored reveal.
+The suffix is the tile size. A `_16` file should be 32x16: the left 16x16 tile is the before/line art and puzzle solution, and the right 16x16 tile is the colored reveal. If the suffix is wrong but the image is still a two-panel sheet, the generator uses the image height as the tile size.
+
+For opaque black-and-white line art, the generator treats the dominant white-ish or black-ish first-panel color as the empty background.
 
 Generate puzzle JSON from every sheet in `levels/`:
 

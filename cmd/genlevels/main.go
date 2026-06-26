@@ -12,7 +12,7 @@ import (
 	"github.com/alex/nongrampictures/internal/pixelpuzzle"
 )
 
-var levelFilePattern = regexp.MustCompile(`^(L[0-9]+)[-_](.+)_([0-9]+)(?:\.png)?$`)
+var levelFilePattern = regexp.MustCompile(`^(L[0-9]+)[-_](.+)_([0-9]+)(?:\.(?:png|webp))?$`)
 
 func main() {
 	levelsDir := flag.String("levels", "levels", "folder containing L1-name_16 spritesheet files")

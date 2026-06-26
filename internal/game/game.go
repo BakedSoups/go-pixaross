@@ -15,7 +15,6 @@ const (
 	ScreenWidth  = 540
 	ScreenHeight = 780
 
-	levelSelectPages    = 2
 	levelSelectPageSize = 16
 )
 
@@ -110,6 +109,9 @@ func New(puzzlePath string) (*Game, error) {
 func loadBestTimes() map[string]time.Duration {
 	best := make(map[string]time.Duration, len(gameLevels))
 	for _, level := range gameLevels {
+		if !level.Available {
+			continue
+		}
 		if d := loadSavedBest(level.ID); d > 0 {
 			best[level.ID] = d
 		}
@@ -120,6 +122,9 @@ func loadBestTimes() map[string]time.Duration {
 func loadLevelThumbs() map[string][][]assets.PixelCell {
 	thumbs := make(map[string][][]assets.PixelCell, len(gameLevels))
 	for _, level := range gameLevels {
+		if !level.Available {
+			continue
+		}
 		loaded, err := assets.LoadPuzzleAssets(level.Path)
 		if err == nil {
 			thumbs[level.ID] = loaded.RevealPixels
@@ -210,7 +215,11 @@ func (g *Game) loadLevel(index int) error {
 	if index < 0 || index >= len(gameLevels) {
 		return fmt.Errorf("level %d is not available", index+1)
 	}
-	return g.loadPuzzle(gameLevels[index].Path)
+	level := gameLevels[index]
+	if !level.Available {
+		return fmt.Errorf("level %d is not available", index+1)
+	}
+	return g.loadPuzzle(level.Path)
 }
 
 func (g *Game) prevLevelPage() {
@@ -220,9 +229,17 @@ func (g *Game) prevLevelPage() {
 }
 
 func (g *Game) nextLevelPage() {
-	if g.levelPage < levelSelectPages-1 {
+	if g.levelPage < levelSelectPages()-1 {
 		g.levelPage++
 	}
+}
+
+func levelSelectPages() int {
+	pages := (len(gameLevels) + levelSelectPageSize - 1) / levelSelectPageSize
+	if pages < 1 {
+		return 1
+	}
+	return pages
 }
 
 func (g *Game) retry() {
